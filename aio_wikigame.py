@@ -17,6 +17,7 @@ class WApi:
         self._session = session
 
     async def _request(self, params: dict[str, str | int]):
+        params.setdefault("action", "query")
         params.setdefault("format", "json")
         params.setdefault("formatversion", "2")
         async with self._session.get(
@@ -25,12 +26,11 @@ class WApi:
         ) as resp:
             return await resp.json()
 
-    async def random_page(self, limit: int = 1) -> list[Page]:
+    async def random_page(self, limit: int = 1, namespace: int = 0) -> list[Page]:
         result = await self._request(
             {
-                "action": "query",
                 "list": "random",
-                "rnnamespace": 0,
+                "rnnamespace": namespace,
                 "rnlimit": limit,
             }
         )
@@ -39,7 +39,6 @@ class WApi:
     async def lookup_page(self, title: str) -> Page | None:
         result = await self._request(
             {
-                "action": "query",
                 "titles": title,
             }
         )
@@ -50,8 +49,8 @@ class WApi:
 async def main():
     async with aiohttp.ClientSession() as session:
         wapi = WApi(session)
-        page = await wapi.lookup_page("Main Page")
-        print(page)
+        print(await wapi.lookup_page("Main Page"))
+        print(await wapi.random_page(3))
 
 
 if __name__ == "__main__":
