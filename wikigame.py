@@ -12,11 +12,6 @@ class Page:
     title: str
 
 
-@dataclasses.dataclass(frozen=True, eq=True)
-class Path:
-    path: list[Page]
-
-
 class WApi:
     def __init__(self, session: aiohttp.ClientSession):
         self._session = session
@@ -105,10 +100,11 @@ async def main():
     async with aiohttp.ClientSession() as session:
         wapi = WApi(session)
         src, tgt = [page async for page in wapi.random_page(2)]
-        print(f"{src=} -> {tgt=}")
+        logging.info(f"{src=} -> {tgt=}")
 
         targets = {tgt}
         target_queue = [tgt]
+
         sources = {src}
         source_queue = [src]
 
@@ -117,11 +113,11 @@ async def main():
             current_source = source_queue.pop(0)
             source_links = [i async for i in wapi.page_links(current_source)]
             sources |= set(source_links)
-            print(f"{len(sources)=} {len(targets)=}")
+            logging.info(f"sources: {len(sources)=} {len(targets)=}")
 
-            if sources & targets:
+            if link := sources & targets:
                 found_link = True
-                print("Found link")
+                logging.info(f"{link=}")
                 break
             else:
                 source_queue.extend(source_links)
@@ -129,11 +125,11 @@ async def main():
             current_target = target_queue.pop(0)
             target_links = [i async for i in wapi.links_here(current_target)]
             targets |= set(target_links)
-            print(f"{len(sources)=} {len(targets)=}")
+            logging.info(f"targets: {len(sources)=} {len(targets)=}")
 
-            if sources & targets:
+            if link := sources & targets:
                 found_link = True
-                print("Found link")
+                logging.info(f"Found {link=}")
                 break
             else:
                 target_queue.extend(target_links)
