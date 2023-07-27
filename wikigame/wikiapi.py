@@ -79,7 +79,7 @@ class WikiApi:
                 if "missing" not in link:
                     yield Page(**link)
                 else:
-                    logging.warn(f"Found missing page: {link}")
+                    logging.debug(f"Found missing page: {link}")
 
     async def links_here(self, page: Page, namespace: int = 0) -> AsyncIterator[Page]:
         async for result in self.request(
