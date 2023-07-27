@@ -1,5 +1,5 @@
 import logging
-from typing import Iterator, Literal, Self
+from typing import Literal, Self
 
 from ordered_set import OrderedSet
 
@@ -16,9 +16,10 @@ class Search:
 
     async def extend_search(self, wikiapi: WikiApi, other: Self) -> set[Page]:
         search_head = self.search_queue.pop(0)
-        logging.info(f"Searching {self.search_mode}: {search_head}")
+        logging.debug(f"Searching {self.search_mode}: {search_head}")
 
         links = await self._find_links(search_head, wikiapi)
+        links = [link for link in links if link not in self.search_space]
 
         # self.search_space |= links
         for link in links:
@@ -40,28 +41,44 @@ class Search:
                 raise RuntimeError(f"Invalid search mode: {self.search_mode}")
         return OrderedSet([link async for link in search_method(page)])
 
-    def find_route(self, page: Page) -> Iterator[Page] | None:
+    def find_route(self, page: Page) -> list[Page] | None:
         if page not in self.search_space:
             return None
 
+        route = []
         links = self.search_space[page]
         while len(links) != 0:
             if len(links) > 1:
                 logging.warn(f"Ignoring links: {links[1:]}")
             link = links[0]
-            yield link
+            route.append(link)
             links = self.search_space[link]
+        return route
 
 
-async def find_route(wikiapi: WikiApi, source: Page, target: Page) -> set[Page]:
+async def find_route(wikiapi: WikiApi, source: Page, target: Page) -> list[Page]:
     sources = Search(source, "source")
     targets = Search(target, "target")
 
-    result = set()
+    common_links = set()
     found_link = False
     while not found_link:
-        if result := await sources.extend_search(wikiapi, targets):
+        if common_links := await sources.extend_search(wikiapi, targets):
             break
-        if result := await targets.extend_search(wikiapi, sources):
+        if common_links := await targets.extend_search(wikiapi, sources):
             break
-    return result
+
+    common_link = next(iter(common_links))
+    if len(common_links) > 1:
+        common_links.remove(common_link)
+        logging.warn(f"Ignoring common links: {common_links}")
+
+    source_route = sources.find_route(common_link)
+    target_route = targets.find_route(common_link)
+    if source_route is None or target_route is None:
+        raise RuntimeError("Could not find route for common link")
+
+    route = list(reversed(source_route))
+    route.append(common_link)
+    route.extend(target_route)
+    return route

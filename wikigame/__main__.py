@@ -10,8 +10,7 @@ async def main():
         source, target = [page async for page in wikiapi.random_pages(2)]
         print(f"Searching for {target.title} from {source.title}")
         links = await wikigame.search.find_route(wikiapi, source, target)
-        for link in links:
-            print(f"{link.title} links pages")
+        print(f"Found route: {links}")
 
 
 logging.basicConfig(level=logging.INFO)
