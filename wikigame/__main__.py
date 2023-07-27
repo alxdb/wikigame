@@ -13,5 +13,5 @@ async def main():
         print(route)
 
 
-logging.basicConfig(level=logging.WARN)
+logging.basicConfig(level=logging.INFO)
 asyncio.run(main())

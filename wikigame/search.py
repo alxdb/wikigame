@@ -61,7 +61,7 @@ class Search:
         links = []
         async for link in self._search(wikiapi, search_head):
             if link in self.search_space:
-                logging.info(f"Already searched '{link.title}'")
+                logging.debug(f"Already searched '{link.title}'")
                 continue
             else:
                 self.search_space[link] = search_head
@@ -69,8 +69,9 @@ class Search:
         if common_links := self.search_space.keys() & other.search_space.keys():
             return self._results(other, common_links)
         else:
-            logging.info(f"Common link not found, adding {len(links)} to search queue")
+            logging.info("Common link not found")
             self.search_queue.extend(links)
+            logging.info(f"Search queue now contains {len(self.search_queue)} pages")
 
     def _search(self, wikiapi: WikiApi, page: Page) -> AsyncIterator[Page]:
         match self.search_mode:
