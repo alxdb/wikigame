@@ -30,19 +30,21 @@ class SearchResult(NamedTuple):
             logging.warn(f"Ignoring common links: {ignored_links}")
         return common_link
 
-    def find_route(self) -> Route | None:
+    def find_route(self) -> Route:
         common_link = self.select_common_link()
         route = []
         # sources
-        link = common_link
-        while (link := self.source_space[link]) is not None:
+        search_link = common_link
+        while (link := self.source_space[search_link]) is not None:
+            search_link = link
             route.append(link)
         route.reverse()
         # common
         route.append(common_link)
         # targets
-        link = common_link
-        while (link := self.target_space[link]) is not None:
+        search_link = common_link
+        while (link := self.target_space[search_link]) is not None:
+            search_link = link
             route.append(link)
 
         return Route(route)
@@ -72,6 +74,7 @@ class Search:
             logging.info("Common link not found")
             self.search_queue.extend(links)
             logging.info(f"Search queue now contains {len(self.search_queue)} pages")
+            return None
 
     def _search(self, wikiapi: WikiApi, page: Page) -> AsyncIterator[Page]:
         match self.search_mode:
@@ -110,5 +113,4 @@ async def find_route(wikiapi: WikiApi, source: Page, target: Page) -> Route:
         if (search_result := await targets.find_common(wikiapi, sources)) is not None:
             break
 
-    # search_result should never be None
-    return search_result.find_route()  # type: ignore
+    return search_result.find_route()

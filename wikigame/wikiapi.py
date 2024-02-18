@@ -33,7 +33,7 @@ class WikiApi:
             logging.debug(f"wikipedia api request: {params}")
             async with self.session.get(
                 "https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode(params),
-                headers={"User-Agent": "WikiGame (alxdb@pm.me)"},
+                headers={"User-Agent": self.user_agent},
             ) as response:
                 logging.debug(f"wikipedia api response: {response}")
 
